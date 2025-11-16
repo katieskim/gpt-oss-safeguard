@@ -1,10 +1,14 @@
 from openai import OpenAI
 import json
 import re
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv()  # loads .env
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="",
+    api_key=os.getenv("OPENAI_API_KEY"),
 )
 
 # Define your policy

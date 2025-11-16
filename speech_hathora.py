@@ -5,9 +5,11 @@ This script transcribes an M4A audio file to text using Hathora's API
 
 import os
 from hathora import Hathora, HathoraError, APIError, AuthenticationError
+from dotenv import load_dotenv
 
 def main():
     # Initialize the Hathora client
+    load_dotenv()
     api_key = os.getenv("HATHORA_API_KEY")
     client = Hathora(api_key=api_key, timeout=30)
     
