@@ -1,6 +1,6 @@
 "use client";
 
-import { Video, Square, Loader2, Camera } from "lucide-react";
+import { Video, Square, Loader2, Camera, Mic } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -111,6 +111,10 @@ export function AIVideoInput({
       // Display video in video element
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Ensure video plays (some browsers need explicit play call)
+        videoRef.current.play().catch((err) => {
+          console.error("Error playing video:", err);
+        });
       }
 
       // Set up audio analysis for visualization
@@ -200,38 +204,58 @@ export function AIVideoInput({
       <div className="relative max-w-4xl w-full mx-auto flex items-center flex-col gap-4">
         {/* Video Preview */}
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 border-2 border-slate-800">
-          {hasVideo ? (
-            <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover scale-x-[-1]"
-              />
-              {/* Recording Indicator */}
-              {isRecording && (
-                <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-2 rounded-full bg-red-500/90 backdrop-blur-sm">
-                  <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
-                  <span className="text-sm font-semibold text-white">REC</span>
-                </div>
-              )}
-              {/* Timer */}
-              {isRecording && (
-                <div className="absolute top-4 right-4 px-3 py-2 rounded-full bg-black/70 backdrop-blur-sm">
-                  <span className="text-sm font-mono font-semibold text-white">
-                    {formatTime(time)}
-                  </span>
-                </div>
-              )}
-            </>
-          ) : (
+          {/* Video element is always rendered but only visible when hasVideo is true */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={cn(
+              "w-full h-full object-cover scale-x-[-1]",
+              hasVideo ? "opacity-100" : "opacity-0"
+            )}
+          />
+          
+          {/* Recording Indicator */}
+          {isRecording && hasVideo && (
+            <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-2 rounded-full bg-red-500/90 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
+              <span className="text-sm font-semibold text-white">REC</span>
+            </div>
+          )}
+          
+          {/* Timer */}
+          {isRecording && hasVideo && (
+            <div className="absolute top-4 right-4 px-3 py-2 rounded-full bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+              <span className="text-sm font-mono font-semibold text-white">
+                {formatTime(time)}
+              </span>
+            </div>
+          )}
+
+          {/* Audio-Only Badge */}
+          {hasVideo && (
+            <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-blue-500/90 backdrop-blur-sm animate-in fade-in duration-500">
+              <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                <Mic className="w-3 h-3" />
+                Audio Only Captured
+              </span>
+            </div>
+          )}
+          
+          {/* Placeholder when no video */}
+          {!hasVideo && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center space-y-4">
                 <Camera className="w-16 h-16 text-slate-700 mx-auto" />
-                <p className="text-slate-500 text-sm">
-                  {error || "Click the button below to start"}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-slate-400 text-sm font-medium">
+                    {error || "Ready to Record"}
+                  </p>
+                  <p className="text-slate-600 text-xs max-w-xs mx-auto">
+                    Video preview will appear here. Only audio will be captured and analyzed.
+                  </p>
+                </div>
               </div>
             </div>
           )}
