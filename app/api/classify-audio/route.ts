@@ -121,11 +121,11 @@ export async function POST(request: NextRequest) {
     try {
       // Prepare form data for Hathora API
       const hathoraFormData = new FormData();
-      hathoraFormData.append("model", "parakeet");
       hathoraFormData.append("file", audioFile);
 
-      // Call Hathora speech-to-text API
-      const hathoraResponse = await fetch("https://api.hathora.dev/speech-to-text/v1/convert", {
+      // Call Hathora Parakeet speech-to-text API
+      // Endpoint from SDK: https://app-1c7bebb9-6977-4101-9619-833b251b86d1.app.hathora.dev/v1/transcribe
+      const hathoraResponse = await fetch("https://app-1c7bebb9-6977-4101-9619-833b251b86d1.app.hathora.dev/v1/transcribe", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.HATHORA_API_KEY}`,
