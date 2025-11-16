@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, Sparkles, ArrowRight } from "lucide-react";
+import { ShieldCheck, Sparkles, ArrowRight, Mic } from "lucide-react";
 
 export function HeroClassifier() {
   const scrollToSection = (id: string) => {
@@ -68,6 +68,15 @@ export function HeroClassifier() {
                 </Link>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/voice">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center gap-2"
+                  >
+                    <Mic className="h-4 w-4" />
+                    Voice Recording
+                  </Button>
+                </Link>
                 <Button
                   size="lg"
                   variant="outline"
