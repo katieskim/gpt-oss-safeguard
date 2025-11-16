@@ -1,4 +1,5 @@
-import { AnimatedHero } from "@/components/animated-hero";
+import { NewHero } from "@/components/new-hero";
+import { FeaturesShowcase } from "@/components/features-showcase";
 import { ProblemSection } from "@/components/problem-section";
 import { SolutionSection } from "@/components/solution-section";
 import { WhyItMatters } from "@/components/why-it-matters";
@@ -12,7 +13,8 @@ import { FAQSection } from "@/components/faq-section";
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950">
-      <AnimatedHero />
+      <NewHero />
+      <FeaturesShowcase />
       <ProblemSection />
       <SolutionSection />
       <WhyItMatters />
@@ -28,11 +30,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-2">
             <p className="text-sm text-slate-500">
-              Influencer Content Classifier &copy; {new Date().getFullYear()}
+              RateMyCreator &copy; {new Date().getFullYear()}
             </p>
             <p className="text-xs text-slate-600">
-              For internal use only. Classification system for influencer screening and
-              risk assessment.
+              AI-powered content classification system for creator screening and brand safety.
             </p>
           </div>
         </div>
