@@ -1,5 +1,7 @@
-import { HeroClassifier } from "@/components/hero-classifier";
-import { ProblemContext } from "@/components/problem-context";
+import { AnimatedHero } from "@/components/animated-hero";
+import { ProblemSection } from "@/components/problem-section";
+import { SolutionSection } from "@/components/solution-section";
+import { WhyItMatters } from "@/components/why-it-matters";
 import { RatingOverview } from "@/components/rating-overview";
 import { RatingGuidelines } from "@/components/rating-guidelines";
 import { AgentPlayground } from "@/components/agent-playground";
@@ -10,8 +12,10 @@ import { FAQSection } from "@/components/faq-section";
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950">
-      <HeroClassifier />
-      <ProblemContext />
+      <AnimatedHero />
+      <ProblemSection />
+      <SolutionSection />
+      <WhyItMatters />
       <RatingOverview />
       <RatingGuidelines />
       <AgentPlayground />
