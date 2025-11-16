@@ -127,7 +127,7 @@ def rate_transcript(transcript: str) -> dict:
 
 if __name__ == "__main__":
     sample_transcript = """
-    Dude what the hell was that, that game was insane.
+    Dude what the FUCK was that, that game was insane.
     I'm gonna kill you next round, I swear, you camped my spawn the entire time.
     Let's grab some beers after this.
     """
