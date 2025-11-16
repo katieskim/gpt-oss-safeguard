@@ -54,7 +54,16 @@ export function HeroClassifier() {
                     size="lg"
                     className="w-full sm:w-auto bg-slate-100 text-slate-900 hover:bg-slate-200 flex items-center gap-2"
                   >
-                    📁 Batch Upload
+                    Batch Upload
+                  </Button>
+                </Link>
+                <Link href="/audio">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full sm:w-auto flex items-center gap-2"
+                  >
+                    Audio Rater
                   </Button>
                 </Link>
               </div>
