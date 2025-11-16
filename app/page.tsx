@@ -28,11 +28,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-2">
             <p className="text-sm text-slate-500">
-              Influencer Content Classifier &copy; {new Date().getFullYear()}
+              RateMyCreator &copy; {new Date().getFullYear()}
             </p>
             <p className="text-xs text-slate-600">
-              For internal use only. Classification system for influencer screening and
-              risk assessment.
+              AI-powered content classification for creators. Protect your brand with real-time analysis.
             </p>
           </div>
         </div>

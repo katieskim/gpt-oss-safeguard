@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Influencer Content Classifier",
-  description: "MPAA-style content classification system for influencer screening",
+  title: "RateMyCreator - AI-Powered Creator Content Classification",
+  description: "Protect your brand with AI-powered content classification. Analyze creator videos, voice, and text with MPAA-style ratings in real-time.",
 };
 
 export default function RootLayout({
