@@ -145,11 +145,11 @@ export function BatchClassifier() {
       // Fallback to basic classification on error
       return {
         ...record,
-        rating: "I-PG",
+        rating: "PG",
         riskLevel: "Low",
         thinking: [
           "⚠️ API Error: Using fallback classification",
-          "Please verify OpenAI API key configuration",
+          "Please verify API key configuration",
         ],
         recommendation: "Unable to classify. Please check API configuration.",
       };
@@ -181,11 +181,10 @@ export function BatchClassifier() {
 
   const getRatingColor = (rating: string) => {
     const colors: Record<string, string> = {
-      "I-G": "bg-emerald-500 text-emerald-950",
-      "I-PG": "bg-sky-500 text-sky-950",
-      "I-PG13": "bg-amber-500 text-amber-950",
-      "I-R": "bg-orange-500 text-orange-950",
-      "I-NC17": "bg-red-700 text-red-50",
+      "G": "bg-emerald-500 text-emerald-950",
+      "PG": "bg-sky-500 text-sky-950",
+      "PG-13": "bg-amber-500 text-amber-950",
+      "R": "bg-red-600 text-red-50",
     };
     return colors[rating] || "bg-slate-500 text-slate-950";
   };

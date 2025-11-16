@@ -10,29 +10,85 @@ const openai = new OpenAI({
   },
 });
 
-// Classification guidelines from content.md
+// Classification guidelines for influencer content
 const CLASSIFICATION_GUIDELINES = `
-You are an expert content moderator using MPAA-style rating system for influencer content.
+You are a content classifier that assigns movie-style ratings to influencer content.
 
-Rating Categories:
-- I-G (General Audience): No profanity, no sexual content, no violence, family-friendly
-- I-PG (Parental Guidance): Mild profanity, casual fashion, mild themes
-- I-PG13 (Parents Strongly Cautioned): Profanity, suggestive content, swimwear, partying, innuendo
-- I-R (Restricted): Explicit profanity, highly sexualized content, substance use, controversial
-- I-NC17 (Adults Only): Nudity, explicit sexual content, OnlyFans, adult entertainment
+Your job: read the description of an influencer's content and rate it as one of:
+- "G"
+- "PG"
+- "PG-13"
+- "R"
 
-Analyze the influencer description and return JSON with:
+Base your decision on:
+- Violence and threats
+- Sexual content and nudity
+- Profanity and slurs
+- Drug/alcohol use
+- Self-harm or suicide
+
+### Guidelines (simplified)
+
+G:
+- No swearing beyond mild ("heck", "darn").
+- No sexual content.
+- No real-world violence or threats.
+- No drugs, self-harm, or graphic content.
+- Family-friendly, educational content.
+
+PG:
+- Very mild language ("crap", "damn") but infrequent.
+- Mild, non-graphic violence or threat.
+- Very mild references to romance or kissing.
+- Casual fashion, lifestyle content.
+- No explicit sexual content.
+- No explicit self-harm or hard drugs.
+
+PG-13:
+- Moderate swearing, may include a small number of strong words.
+- Non-graphic but clear violence or threats.
+- Some sexual references, innuendo, or suggestive poses.
+- Swimwear modeling, party content.
+- Mentions of drugs or alcohol use.
+- Non-graphic self-harm references.
+
+R:
+- Frequent strong profanity (e.g., repeated f-words).
+- Graphic or intense violence or threats.
+- Explicit sexual content, nudity, or detailed sexual descriptions.
+- Adult entertainment, OnlyFans content.
+- Explicit drug use.
+- Graphic self-harm/suicide content or detailed plans.
+
+### Output format
+
+You MUST respond with ONLY a single JSON object, no markdown, no backticks, no extra text.
+
+Use this exact shape:
+
 {
-  "rating": "I-G" | "I-PG" | "I-PG13" | "I-R" | "I-NC17",
-  "riskLevel": "Low" | "Medium" | "High" | "Critical",
-  "summary": "Brief explanation of rating",
-  "factors": ["factor1", "factor2", ...],
-  "thinking": ["step1", "step2", ...],
-  "recommendation": "Partnership recommendation",
-  "confidence": 0.0-1.0
+  "rating": "G" | "PG" | "PG-13" | "R",
+  "reasons": [
+    "short bullet-style reason 1",
+    "short reason 2"
+  ],
+  "scores": {
+    "violence": 0-3,
+    "sexual_content": 0-3,
+    "language": 0-3,
+    "drugs": 0-3,
+    "self_harm": 0-3
+  },
+  "recommendation": "Brief partnership recommendation"
 }
 
-Be conservative: when uncertain, choose the more restrictive rating.
+Where scores mean:
+- 0 = none
+- 1 = mild
+- 2 = moderate
+- 3 = strong/explicit
+
+Always choose the HIGHEST severity among categories when deciding the final rating.
 `;
 
 export async function POST(request: NextRequest) {
@@ -55,9 +111,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use GPT-4 for detailed classification via OpenRouter
+    // Use gpt-oss-safeguard-20b for content classification via OpenRouter
     const completion = await openai.chat.completions.create({
-      model: "openai/gpt-4-turbo",
+      model: "openai/gpt-oss-safeguard-20b",
       messages: [
         {
           role: "system",
@@ -65,24 +121,68 @@ export async function POST(request: NextRequest) {
         },
         {
           role: "user",
-          content: `Classify this influencer:
-Handle: ${handle || "Unknown"}
-Platform: ${platform || "Unknown"}
-Description: ${description}
-
-Provide detailed analysis with step-by-step thinking process. Include specific keywords or phrases that influenced your decision.`,
+          content: `Influencer: ${handle || "Unknown"} (${platform || "Unknown"})
+Content Description: ${description}`,
         },
       ],
-      response_format: { type: "json_object" },
+      // @ts-ignore - OpenRouter supports reasoning in extra_body
+      extra_body: {
+        reasoning: { enabled: true }
+      },
       temperature: 0.3,
     });
 
-    const result = JSON.parse(completion.choices[0].message.content || "{}");
+    const rawContent = completion.choices[0].message.content || "{}";
+    
+    // Strip markdown code blocks if present
+    const cleanedContent = rawContent
+      .replace(/^```(?:json)?\s*|\s*```$/gm, "")
+      .trim();
+
+    let result;
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (e) {
+      // Fallback if parsing fails
+      result = {
+        rating: "PG-13",
+        reasons: ["Classification failed - conservative rating applied"],
+        scores: {
+          violence: 1,
+          sexual_content: 1,
+          language: 1,
+          drugs: 1,
+          self_harm: 1,
+        },
+        recommendation: "Unable to classify - manual review recommended",
+        error: true,
+      };
+    }
+
+    // Map rating to risk level
+    const riskLevelMap: { [key: string]: string } = {
+      "G": "Low",
+      "PG": "Low",
+      "PG-13": "Medium",
+      "R": "High",
+    };
+
+    // Create thinking process from scores
+    const thinking = [
+      `Analyzing influencer: ${handle || "Unknown"} on ${platform || "Unknown"}`,
+      `Content rating: ${result.rating}`,
+      ...result.reasons || [],
+      `Risk level: ${riskLevelMap[result.rating] || "Medium"}`,
+    ];
 
     // Return classification result
     return NextResponse.json({
       ...result,
-      model: "gpt-4-turbo",
+      riskLevel: riskLevelMap[result.rating] || "Medium",
+      thinking,
+      factors: result.reasons || [],
+      summary: result.reasons?.[0] || "Content classified",
+      model: "gpt-oss-safeguard-20b",
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {

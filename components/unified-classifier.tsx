@@ -37,11 +37,10 @@ export function UnifiedClassifier() {
 
   const getRatingColor = (rating: string) => {
     const colors: Record<string, string> = {
-      "I-G": "bg-emerald-500 text-emerald-950",
-      "I-PG": "bg-sky-500 text-sky-950",
-      "I-PG13": "bg-amber-500 text-amber-950",
-      "I-R": "bg-orange-500 text-orange-950",
-      "I-NC17": "bg-red-700 text-red-50",
+      "G": "bg-emerald-500 text-emerald-950",
+      "PG": "bg-sky-500 text-sky-950",
+      "PG-13": "bg-amber-500 text-amber-950",
+      "R": "bg-red-600 text-red-50",
     };
     return colors[rating] || "bg-slate-500 text-slate-950";
   };
@@ -78,11 +77,11 @@ export function UnifiedClassifier() {
     } catch (error) {
       console.error("Classification error:", error);
       setResult({
-        rating: "I-PG",
+        rating: "PG",
         riskLevel: "Low",
         summary: "Unable to classify content. Please check your API configuration.",
-        factors: ["API error occurred", "Please verify OpenAI API key is set"],
-        recommendation: "Please configure OpenAI API key in .env.local file",
+        factors: ["API error occurred", "Please verify API keys are set"],
+        recommendation: "Please configure API keys in .env.local file",
       });
     }
 
@@ -109,7 +108,7 @@ export function UnifiedClassifier() {
     } catch (error) {
       console.error("Audio classification error:", error);
       setResult({
-        rating: "I-PG",
+        rating: "PG",
         riskLevel: "Low",
         summary: "Unable to classify audio. Please check your configuration.",
         factors: ["API error occurred", "Please verify API keys are set"],

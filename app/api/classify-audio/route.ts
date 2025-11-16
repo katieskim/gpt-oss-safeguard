@@ -12,26 +12,88 @@ const openaiGPT = new OpenAI({
 });
 
 const CLASSIFICATION_GUIDELINES = `
-You are an expert content moderator analyzing audio transcriptions using MPAA-style rating system.
+You are a content classifier that assigns movie-style ratings to user content.
 
-Rating Categories:
-- I-G (General Audience): No profanity, no sexual content, no violence, family-friendly
-- I-PG (Parental Guidance): Mild profanity, casual themes
-- I-PG13 (Parents Strongly Cautioned): Profanity, suggestive content, mature themes
-- I-R (Restricted): Explicit profanity, highly sexual or violent content, substance references
-- I-NC17 (Adults Only): Extreme explicit content, graphic sexual or violent language
+Your job: read the transcript of a piece of spoken audio and rate it as one of:
+- "G"
+- "PG"
+- "PG-13"
+- "R"
 
-Analyze the transcription and return JSON with:
+Base your decision on:
+- Violence and threats
+- Sexual content and nudity
+- Profanity and slurs
+- Drug/alcohol use
+- Self-harm or suicide
+
+### Guidelines (simplified)
+
+G:
+- No swearing beyond mild ("heck", "darn").
+- No sexual content.
+- No real-world violence or threats.
+- No drugs, self-harm, or graphic content.
+
+PG:
+- Very mild language ("crap", "damn") but infrequent.
+- Mild, non-graphic violence or threat.
+- Very mild references to romance or kissing.
+- No explicit sexual content.
+- No explicit self-harm or hard drugs.
+
+PG-13:
+- Moderate swearing, may include a small number of strong words.
+- Non-graphic but clear violence or threats.
+- Some sexual references or innuendo, but not explicit.
+- Mentions of drugs or alcohol use.
+- Non-graphic self-harm references.
+
+R:
+- Frequent strong profanity (e.g., repeated f-words).
+- Graphic or intense violence or threats.
+- Explicit sexual content or detailed sexual descriptions.
+- Explicit drug use.
+- Graphic self-harm/suicide content or detailed plans.
+
+### Output format
+
+You MUST respond with ONLY a single JSON object, no markdown, no backticks, no extra text.
+
+Use this exact shape:
+
 {
-  "rating": "I-G" | "I-PG" | "I-PG13" | "I-R" | "I-NC17",
-  "riskLevel": "Low" | "Medium" | "High" | "Critical",
-  "summary": "Brief explanation of rating",
-  "factors": ["factor1", "factor2", ...],
-  "recommendation": "Partnership recommendation",
-  "confidence": 0.0-1.0
+  "rating": "G" | "PG" | "PG-13" | "R",
+  "reasons": [
+    "short bullet-style reason 1",
+    "short reason 2"
+  ],
+  "scores": {
+    "violence": 0-3,
+    "sexual_content": 0-3,
+    "language": 0-3,
+    "drugs": 0-3,
+    "self_harm": 0-3
+  }
 }
 
-Be conservative: when uncertain, choose the more restrictive rating.
+Where scores mean:
+- 0 = none
+- 1 = mild
+- 2 = moderate
+- 3 = strong/explicit
+
+Always choose the HIGHEST severity among categories when deciding the final rating.
+
+Examples:
+
+Content: "Let's watch a movie and kiss a bit."
+Answer:
+{"rating": "PG", "reasons": ["Mild romantic content"], "scores": {"violence":0,"sexual_content":1,"language":0,"drugs":0,"self_harm":0}}
+
+Content: "I'm going to f***ing kill you tonight."
+Answer:
+{"rating": "R", "reasons": ["Strong profanity", "Explicit threat of violence"], "scores": {"violence":3,"sexual_content":0,"language":3,"drugs":0,"self_harm":0}}
 `;
 
 export async function POST(request: NextRequest) {
@@ -100,19 +162,23 @@ export async function POST(request: NextRequest) {
 
     if (!transcription || transcription.trim().length === 0) {
       return NextResponse.json({
-        rating: "I-G",
-        riskLevel: "Low",
-        summary: "No speech detected in audio file.",
-        factors: ["No transcribable content found"],
-        recommendation: "Unable to classify - no content detected",
+        rating: "G",
+        reasons: ["No speech detected in audio file"],
+        scores: {
+          violence: 0,
+          sexual_content: 0,
+          language: 0,
+          drugs: 0,
+          self_harm: 0,
+        },
         transcription: "",
-        confidence: 0.0,
+        riskLevel: "Low",
       });
     }
 
-    // Step 2: Classify the transcribed content using OpenRouter
+    // Step 2: Classify the transcribed content using gpt-oss-safeguard-20b
     const completion = await openaiGPT.chat.completions.create({
-      model: "openai/gpt-4-turbo",
+      model: "openai/gpt-oss-safeguard-20b",
       messages: [
         {
           role: "system",
@@ -120,20 +186,56 @@ export async function POST(request: NextRequest) {
         },
         {
           role: "user",
-          content: `Classify this audio transcription:\n\n"${transcription}"\n\nProvide detailed analysis based on language, themes, and content maturity.`,
+          content: transcription,
         },
       ],
-      response_format: { type: "json_object" },
+      // @ts-ignore - OpenRouter supports reasoning in extra_body
+      extra_body: {
+        reasoning: { enabled: true }
+      },
       temperature: 0.3,
     });
 
-    const result = JSON.parse(completion.choices[0].message.content || "{}");
+    const rawContent = completion.choices[0].message.content || "{}";
+    
+    // Strip markdown code blocks if present
+    const cleanedContent = rawContent
+      .replace(/^```(?:json)?\s*|\s*```$/gm, "")
+      .trim();
+
+    let result;
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (e) {
+      // Fallback if parsing fails
+      result = {
+        rating: "PG-13",
+        reasons: ["Classification failed - conservative rating applied"],
+        scores: {
+          violence: 1,
+          sexual_content: 1,
+          language: 1,
+          drugs: 1,
+          self_harm: 1,
+        },
+        error: true,
+      };
+    }
+
+    // Map rating to risk level
+    const riskLevelMap: { [key: string]: string } = {
+      "G": "Low",
+      "PG": "Low",
+      "PG-13": "Medium",
+      "R": "High",
+    };
 
     // Return classification result with transcription
     return NextResponse.json({
       ...result,
       transcription,
-      model: "hathora-parakeet + gpt-4-turbo",
+      riskLevel: riskLevelMap[result.rating] || "Medium",
+      model: "hathora-parakeet + gpt-oss-safeguard-20b",
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
