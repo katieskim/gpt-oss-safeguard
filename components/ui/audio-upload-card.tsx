@@ -197,23 +197,14 @@ const AudioComponent = ({
           <motion.div 
             initial={{ scale: 1.5 }}
             animate={isRemoving ? {
-              scale: 0,
-              transition: { duration: 0.4 }
-            } : [
-              {
-                scale: 1.1,
-                transition: {
-                  ease: "easeInOut",
-                },
-              },
-              {
-                scale: 1.0,
-                transition: {
-                  duration: 0.8,
-                  ease: [0.68, -0.55, 0.265, 1.55],
-                },
-              },
-            ]}
+              scale: 0
+            } : {
+              scale: 1.0
+            }}
+            transition={isRemoving ? 
+              { duration: 0.4 } : 
+              { duration: 0.8, ease: [0.68, -0.55, 0.265, 1.55] }
+            }
             className="rounded-lg border border-border/30 bg-muted px-2 py-1.5 backdrop-blur-sm shadow-lg relative group"
           >
             <button
@@ -346,7 +337,7 @@ export function AudioUploadCard({
               <UploadCardBase
                 isDragOver={isDragOver}
                 isUploading={isUploading}
-              />
+              ><></></UploadCardBase>
 
               <input
                 ref={fileInputRef}
