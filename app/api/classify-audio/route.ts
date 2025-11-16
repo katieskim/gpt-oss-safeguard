@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
+// OpenAI client for Whisper transcription (must use OpenAI, not OpenRouter)
+const openaiWhisper = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY_WHISPER || process.env.OPENAI_API_KEY,
+  baseURL: "https://api.openai.com/v1", // Direct OpenAI for Whisper
+});
+
+// OpenRouter client for GPT-4 classification
+const openaiGPT = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1",
   defaultHeaders: {
@@ -52,13 +59,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 1: Transcribe audio using Whisper API
-    const transcriptionResponse = await openai.audio.transcriptions.create({
-      file: audioFile,
-      model: "whisper-1",
-    });
-
-    const transcription = transcriptionResponse.text;
+    // Step 1: Transcribe audio using Whisper API (OpenAI only)
+    let transcription = "";
+    
+    try {
+      const transcriptionResponse = await openaiWhisper.audio.transcriptions.create({
+        file: audioFile,
+        model: "whisper-1",
+      });
+      transcription = transcriptionResponse.text;
+    } catch (whisperError: any) {
+      // If Whisper fails (e.g., no OpenAI key), provide helpful error
+      console.error("Whisper transcription error:", whisperError);
+      return NextResponse.json({
+        error: "Audio transcription failed",
+        details: "OpenRouter does not support Whisper API. You need a direct OpenAI API key for audio transcription.",
+        rating: "I-PG",
+        riskLevel: "Low",
+        summary: "Unable to transcribe audio. OpenAI API key required for Whisper.",
+        factors: ["Transcription requires OpenAI API key", "OpenRouter does not support audio transcription"],
+        recommendation: "Add OPENAI_API_KEY_WHISPER=sk-your-key to .env.local",
+        transcription: "Error: No transcription available",
+      }, { status: 500 });
+    }
 
     if (!transcription || transcription.trim().length === 0) {
       return NextResponse.json({
@@ -72,8 +95,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 2: Classify the transcribed content
-    const completion = await openai.chat.completions.create({
+    // Step 2: Classify the transcribed content using OpenRouter
+    const completion = await openaiGPT.chat.completions.create({
       model: "openai/gpt-4-turbo",
       messages: [
         {
