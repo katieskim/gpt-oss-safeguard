@@ -9,6 +9,7 @@ import json
 import re
 from hathora import Hathora, HathoraError, APIError, AuthenticationError
 from openai import OpenAI
+from dotenv import load_dotenv
 
 
 # Initialize clients
@@ -19,7 +20,7 @@ def initialize_clients():
     
     openai_client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
-        api_key="",
+        api_key=os.getenv("OPENAI_API_KEY"),
     )
     
     return hathora_client, openai_client
