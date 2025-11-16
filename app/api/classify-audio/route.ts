@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-// OpenAI client for Whisper transcription (must use OpenAI, not OpenRouter)
-const openaiWhisper = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY_WHISPER || process.env.OPENAI_API_KEY,
-  baseURL: "https://api.openai.com/v1", // Direct OpenAI for Whisper
-});
-
 // OpenRouter client for GPT-4 classification
 const openaiGPT = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -52,33 +46,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.HATHORA_API_KEY) {
       return NextResponse.json(
-        { error: "OpenAI API key not configured" },
+        { error: "Hathora API key not configured" },
         { status: 500 }
       );
     }
 
-    // Step 1: Transcribe audio using Whisper API (OpenAI only)
+    // Step 1: Transcribe audio using Hathora's speech-to-text API
     let transcription = "";
     
     try {
-      const transcriptionResponse = await openaiWhisper.audio.transcriptions.create({
-        file: audioFile,
-        model: "whisper-1",
+      // Prepare form data for Hathora API
+      const hathoraFormData = new FormData();
+      hathoraFormData.append("model", "parakeet");
+      hathoraFormData.append("file", audioFile);
+
+      // Call Hathora speech-to-text API
+      const hathoraResponse = await fetch("https://api.hathora.dev/speech-to-text/v1/convert", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.HATHORA_API_KEY}`,
+        },
+        body: hathoraFormData,
       });
-      transcription = transcriptionResponse.text;
-    } catch (whisperError: any) {
-      // If Whisper fails (e.g., no OpenAI key), provide helpful error
-      console.error("Whisper transcription error:", whisperError);
+
+      if (!hathoraResponse.ok) {
+        const errorText = await hathoraResponse.text();
+        console.error("Hathora API error:", errorText);
+        throw new Error(`Hathora API returned ${hathoraResponse.status}: ${errorText}`);
+      }
+
+      const hathoraData = await hathoraResponse.json();
+      transcription = hathoraData.text || hathoraData.transcription || "";
+
+      if (!transcription) {
+        console.error("No transcription in Hathora response:", hathoraData);
+        throw new Error("No transcription text returned from Hathora");
+      }
+    } catch (hathoraError: any) {
+      console.error("Hathora transcription error:", hathoraError);
       return NextResponse.json({
         error: "Audio transcription failed",
-        details: "OpenRouter does not support Whisper API. You need a direct OpenAI API key for audio transcription.",
+        details: hathoraError.message || "Hathora speech-to-text API error",
         rating: "I-PG",
         riskLevel: "Low",
-        summary: "Unable to transcribe audio. OpenAI API key required for Whisper.",
-        factors: ["Transcription requires OpenAI API key", "OpenRouter does not support audio transcription"],
-        recommendation: "Add OPENAI_API_KEY_WHISPER=sk-your-key to .env.local",
+        summary: "Unable to transcribe audio. Please check Hathora API configuration.",
+        factors: ["Transcription service error", "Please verify HATHORA_API_KEY is set correctly"],
+        recommendation: "Check Hathora API key in .env.local",
         transcription: "Error: No transcription available",
       }, { status: 500 });
     }
@@ -118,7 +133,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...result,
       transcription,
-      model: "whisper-1 + gpt-4-turbo",
+      model: "hathora-parakeet + gpt-4-turbo",
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
