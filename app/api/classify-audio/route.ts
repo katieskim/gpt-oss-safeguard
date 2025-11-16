@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 // OpenRouter client for GPT-4 classification
-const openaiGPT = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1",
-  defaultHeaders: {
-    "HTTP-Referer": "http://localhost:3000",
-    "X-Title": "Influencer Content Classifier - Audio",
-  },
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || "",
+    baseURL: process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1",
+    defaultHeaders: {
+      "HTTP-Referer": "http://localhost:3000",
+      "X-Title": "Influencer Content Classifier - Audio",
+    },
+  });
+}
 
 const CLASSIFICATION_GUIDELINES = `
 You are a content classifier that assigns movie-style ratings to user content.
@@ -177,6 +179,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Classify the transcribed content using gpt-oss-safeguard-20b
+    const openaiGPT = getOpenAIClient();
     const completion = await openaiGPT.chat.completions.create({
       model: "openai/gpt-oss-safeguard-20b",
       messages: [

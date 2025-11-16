@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1",
-  defaultHeaders: {
-    "HTTP-Referer": "http://localhost:3000",
-    "X-Title": "Influencer Content Classifier",
-  },
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || "",
+    baseURL: process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1",
+    defaultHeaders: {
+      "HTTP-Referer": "http://localhost:3000",
+      "X-Title": "Influencer Content Classifier",
+    },
+  });
+}
 
 const CLASSIFICATION_GUIDELINES = `
 You are an expert content moderator using MPAA-style rating system for influencer content.
@@ -45,6 +47,8 @@ export async function POST(request: NextRequest) {
     // Process each influencer
     const results = [];
 
+    const openai = getOpenAIClient();
+    
     for (const influencer of influencers) {
       const { handle, platform, description } = influencer;
 

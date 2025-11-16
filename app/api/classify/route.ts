@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1",
-  defaultHeaders: {
-    "HTTP-Referer": "http://localhost:3000",
-    "X-Title": "Influencer Content Classifier",
-  },
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || "",
+    baseURL: process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1",
+    defaultHeaders: {
+      "HTTP-Referer": "http://localhost:3000",
+      "X-Title": "Influencer Content Classifier",
+    },
+  });
+}
 
 // Classification guidelines for influencer content
 const CLASSIFICATION_GUIDELINES = `
@@ -112,6 +114,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use gpt-oss-safeguard-20b for content classification via OpenRouter
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: "openai/gpt-oss-safeguard-20b",
       messages: [
