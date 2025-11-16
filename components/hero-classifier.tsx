@@ -38,54 +38,66 @@ export function HeroClassifier() {
             </p>
 
             <div className="flex flex-col gap-4 pt-4">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/chat">
+              {/* Primary CTA - Video Recording */}
+              <div className="flex justify-center">
+                <Link href="/video">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 group"
+                    className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white flex items-center gap-3 px-8 py-6 text-lg shadow-2xl shadow-blue-500/30 group"
                   >
-                    <Sparkles className="h-4 w-4" />
-                    Try AI Rating Agent
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-                <Link href="/batch">
-                  <Button
-                    size="lg"
-                    className="w-full sm:w-auto bg-slate-100 text-slate-900 hover:bg-slate-200 flex items-center gap-2"
-                  >
-                    Batch Upload
-                  </Button>
-                </Link>
-                <Link href="/audio">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full sm:w-auto flex items-center gap-2"
-                  >
-                    Audio Rater
+                    <Video className="h-5 w-5" />
+                    Start Video Analysis
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
               </div>
+              
+              {/* Secondary CTAs */}
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/voice">
+                <Link href="/voice" className="flex-1">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center gap-2"
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center gap-2"
                   >
                     <Mic className="h-4 w-4" />
                     Voice Recording
                   </Button>
                 </Link>
-                <Link href="/video">
+                <Link href="/chat" className="flex-1">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white flex items-center gap-2"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 group"
                   >
-                    <Video className="h-4 w-4" />
-                    Video Recording
+                    <Sparkles className="h-4 w-4" />
+                    Text Analysis
                   </Button>
                 </Link>
+              </div>
+              
+              {/* Tertiary CTAs */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/batch" className="flex-1">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full flex items-center gap-2"
+                  >
+                    Batch Upload
+                  </Button>
+                </Link>
+                <Link href="/audio" className="flex-1">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full flex items-center gap-2"
+                  >
+                    Audio Files
+                  </Button>
+                </Link>
+              </div>
+              
+              {/* Navigation CTAs */}
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   size="lg"
                   variant="outline"
