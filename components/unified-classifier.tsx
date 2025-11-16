@@ -22,11 +22,19 @@ import {
 interface ClassificationResult {
   rating: string;
   riskLevel: string;
-  summary: string;
-  factors: string[];
-  recommendation: string;
+  summary?: string;
+  factors?: string[];
+  reasons?: string[];
+  recommendation?: string;
   transcription?: string;
   confidence?: number;
+  scores?: {
+    violence: number;
+    sexual_content: number;
+    language: number;
+    drugs: number;
+    self_harm: number;
+  };
 }
 
 export function UnifiedClassifier() {
@@ -378,54 +386,88 @@ export function UnifiedClassifier() {
                     )}
 
                     {/* Summary */}
-                    <div>
-                      <p className="text-xs text-slate-500 mb-2">Summary</p>
-                      <p className="text-sm text-slate-300 leading-relaxed">
-                        {result.summary}
-                      </p>
-                    </div>
+                    {result.summary && (
+                      <div>
+                        <p className="text-xs text-slate-500 mb-2">Summary</p>
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                          {result.summary}
+                        </p>
+                      </div>
+                    )}
 
-                    {/* Key Factors */}
-                    <div>
-                      <p className="text-xs text-slate-500 mb-3">
-                        Key Factors
-                      </p>
-                      <ul className="space-y-2">
-                        {result.factors.map((factor, index) => (
-                          <motion.li
-                            key={index}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="flex items-start gap-2 text-sm text-slate-400"
-                          >
-                            <span className="text-purple-500 mt-1 flex-shrink-0">
-                              •
-                            </span>
-                            <span>{factor}</span>
-                          </motion.li>
-                        ))}
+                    {/* Key Factors / Reasons */}
+                    {(result.reasons || result.factors) && (result.reasons || result.factors)!.length > 0 && (
+                      <div>
+                        <p className="text-xs text-slate-500 mb-3">
+                          {result.reasons ? "Reasons" : "Key Factors"}
+                        </p>
+                        <ul className="space-y-2">
+                          {(result.reasons || result.factors)!.map((factor, index) => (
+                            <motion.li
+                              key={index}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="flex items-start gap-2 text-sm text-slate-400"
+                            >
+                              <span className="text-purple-500 mt-1 flex-shrink-0">
+                                •
+                              </span>
+                              <span>{factor}</span>
+                            </motion.li>
+                          ))}
                       </ul>
                     </div>
+                    )}
+
+                    {/* Scores (if available) */}
+                    {result.scores && (
+                      <div>
+                        <p className="text-xs text-slate-500 mb-3">Content Scores</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          {Object.entries(result.scores).map(([key, value]) => (
+                            <div
+                              key={key}
+                              className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
+                            >
+                              <span className="text-xs text-slate-400 capitalize">
+                                {key.replace('_', ' ')}
+                              </span>
+                              <span className={cn(
+                                "text-sm font-semibold",
+                                value === 0 && "text-emerald-400",
+                                value === 1 && "text-sky-400",
+                                value === 2 && "text-amber-400",
+                                value === 3 && "text-red-400"
+                              )}>
+                                {value}/3
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Recommendation */}
-                    <div className="border-t border-slate-800 pt-6">
-                      <p className="text-xs text-slate-500 mb-2">
-                        Partnership Recommendation
-                      </p>
-                      <p
-                        className={cn(
-                          "text-sm font-medium leading-relaxed",
-                          result.riskLevel === "Low" && "text-emerald-400",
-                          result.riskLevel === "Medium" && "text-amber-400",
-                          (result.riskLevel === "High" ||
-                            result.riskLevel === "Critical") &&
-                            "text-red-400"
-                        )}
-                      >
-                        {result.recommendation}
-                      </p>
-                    </div>
+                    {result.recommendation && (
+                      <div className="border-t border-slate-800 pt-6">
+                        <p className="text-xs text-slate-500 mb-2">
+                          Partnership Recommendation
+                        </p>
+                        <p
+                          className={cn(
+                            "text-sm font-medium leading-relaxed",
+                            result.riskLevel === "Low" && "text-emerald-400",
+                            result.riskLevel === "Medium" && "text-amber-400",
+                            (result.riskLevel === "High" ||
+                              result.riskLevel === "Critical") &&
+                              "text-red-400"
+                          )}
+                        >
+                          {result.recommendation}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Confidence (if available) */}
                     {result.confidence && (
