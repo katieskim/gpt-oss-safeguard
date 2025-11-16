@@ -109,86 +109,51 @@ export function BatchClassifier() {
     });
   };
 
-  const classifyInfluencer = (record: InfluencerRecord): InfluencerRecord => {
-    const lowerDesc = record.description.toLowerCase();
-    let rating = "I-G";
-    let riskLevel = "Low";
-    let thinking: string[] = [];
-    let recommendation = "";
+  const classifyInfluencer = async (record: InfluencerRecord): Promise<InfluencerRecord> => {
+    try {
+      const response = await fetch("/api/classify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          description: record.description,
+          handle: record.handle,
+          platform: record.platform,
+        }),
+      });
 
-    // Thinking process
-    thinking.push(`Analyzing influencer: ${record.handle} on ${record.platform}`);
-    thinking.push(`Examining content description: "${record.description}"`);
+      if (!response.ok) {
+        throw new Error("Classification failed");
+      }
 
-    // Classification logic with thinking
-    if (
-      lowerDesc.includes("onlyfans") ||
-      lowerDesc.includes("explicit") ||
-      lowerDesc.includes("nude") ||
-      lowerDesc.includes("lingerie")
-    ) {
-      rating = "I-NC17";
-      riskLevel = "Critical";
-      thinking.push("🔴 CRITICAL: Detected adult subscription service (OnlyFans)");
-      thinking.push("🔴 CRITICAL: Explicit or sexual content keywords found");
-      thinking.push("🔴 CRITICAL: Content created for adult arousal");
-      thinking.push("Decision: Classifying as I-NC17 (Adults Only)");
-      recommendation = "NOT RECOMMENDED for any general-market partnership.";
-    } else if (
-      lowerDesc.includes("nightclub") ||
-      lowerDesc.includes("cocktails") ||
-      lowerDesc.includes("suggestive") ||
-      lowerDesc.includes("provocative")
-    ) {
-      rating = "I-R";
-      riskLevel = "High";
-      thinking.push("⚠️ WARNING: Nightlife and party culture detected");
-      thinking.push("⚠️ WARNING: Suggestive or provocative content present");
-      thinking.push("⚠️ WARNING: Alcohol consumption imagery");
-      thinking.push("Decision: Classifying as I-R (Restricted)");
-      recommendation = "HIGH RISK: Requires senior approval and brand alignment review.";
-    } else if (
-      lowerDesc.includes("wine") ||
-      lowerDesc.includes("fashion") ||
-      lowerDesc.includes("cafe")
-    ) {
-      rating = "I-PG";
-      riskLevel = "Low";
-      thinking.push("✓ SAFE: Lifestyle content detected");
-      thinking.push("✓ SAFE: Casual social drinking in context");
-      thinking.push("✓ SAFE: Fashion and lifestyle themes appropriate");
-      thinking.push("Decision: Classifying as I-PG (Parental Guidance)");
-      recommendation = "LOW RISK: Generally suitable for most brand partnerships.";
-    } else if (
-      lowerDesc.includes("cooking") ||
-      lowerDesc.includes("kid-friendly") ||
-      lowerDesc.includes("educational")
-    ) {
-      rating = "I-G";
-      riskLevel = "Low";
-      thinking.push("✓ APPROVED: Family-friendly content detected");
-      thinking.push("✓ APPROVED: Educational value present");
-      thinking.push("✓ APPROVED: No mature or controversial themes");
-      thinking.push("Decision: Classifying as I-G (General Audience)");
-      recommendation = "APPROVED: Ideal for all brand partnerships including family campaigns.";
-    } else {
-      rating = "I-PG";
-      riskLevel = "Low";
-      thinking.push("ℹ️ INFO: Standard lifestyle content");
-      thinking.push("ℹ️ INFO: No high-risk indicators found");
-      thinking.push("Decision: Classifying as I-PG (Parental Guidance)");
-      recommendation = "LOW RISK: Suitable for most brand partnerships.";
+      const data = await response.json();
+
+      return {
+        ...record,
+        rating: data.rating,
+        riskLevel: data.riskLevel,
+        thinking: data.thinking || [
+          `Analyzing influencer: ${record.handle} on ${record.platform}`,
+          `Examined content description`,
+          `Assigned rating: ${data.rating}`,
+          `Risk level: ${data.riskLevel}`,
+        ],
+        recommendation: data.recommendation,
+      };
+    } catch (error) {
+      // Fallback to basic classification on error
+      return {
+        ...record,
+        rating: "I-PG",
+        riskLevel: "Low",
+        thinking: [
+          "⚠️ API Error: Using fallback classification",
+          "Please verify OpenAI API key configuration",
+        ],
+        recommendation: "Unable to classify. Please check API configuration.",
+      };
     }
-
-    thinking.push(`Final Rating: ${rating} | Risk Level: ${riskLevel}`);
-
-    return {
-      ...record,
-      rating,
-      riskLevel,
-      thinking,
-      recommendation,
-    };
   };
 
   const handleProcessFile = async () => {
@@ -204,10 +169,11 @@ export function BatchClassifier() {
     const processedResults: InfluencerRecord[] = [];
 
     for (let i = 0; i < records.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      const classified = classifyInfluencer(records[i]);
+      const classified = await classifyInfluencer(records[i]);
       processedResults.push(classified);
       setResults([...processedResults]);
+      // Small delay to show progress
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     setProcessing(false);

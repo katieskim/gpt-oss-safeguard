@@ -106,114 +106,43 @@ export function InfluencerRatingAgent() {
         setLoading(true);
         setResult(null);
 
-        // Simulate AI classification
-        await new Promise((resolve) => setTimeout(resolve, 2500));
+        try {
+            const response = await fetch("/api/classify", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    description: value,
+                    handle: "@influencer",
+                    platform: "Social Media",
+                }),
+            });
 
-        const lowerDesc = value.toLowerCase();
-        let rating = "I-G";
-        let summary = "";
-        let factors: string[] = [];
-        let recommendation = "";
-        let riskLevel = "Low";
+            if (!response.ok) {
+                throw new Error("Classification failed");
+            }
 
-        // Classification logic based on content.md guidelines
-        if (
-            lowerDesc.includes("explicit") ||
-            lowerDesc.includes("nude") ||
-            lowerDesc.includes("onlyfans") ||
-            lowerDesc.includes("fansly") ||
-            lowerDesc.includes("adult subscription") ||
-            lowerDesc.includes("sex work") ||
-            lowerDesc.includes("erotic")
-        ) {
-            rating = "I-NC17";
-            riskLevel = "Critical";
-            summary = "Content includes explicit adult material, nudity, or adult subscription services. Classified as Adults Only.";
-            factors = [
-                "Full or partial nudity detected",
-                "Adult subscription service promotion (OnlyFans/Fansly)",
-                "Explicit sexual content or erotic performances",
-                "Content created for adult arousal"
-            ];
-            recommendation = "NOT RECOMMENDED for any general-market partnership. Content is inappropriate for brand safety.";
-        } else if (
-            lowerDesc.includes("provocative") ||
-            lowerDesc.includes("frequent profanity") ||
-            lowerDesc.includes("explicit language") ||
-            lowerDesc.includes("substance") ||
-            lowerDesc.includes("intoxication") ||
-            lowerDesc.includes("controversial") ||
-            lowerDesc.includes("highly sexualized") ||
-            lowerDesc.includes("bondage")
-        ) {
-            rating = "I-R";
-            riskLevel = "High";
-            summary = "Content contains strong mature themes with high reputational risk. Not suitable for minors.";
-            factors = [
-                "Frequent or explicit profanity present",
-                "Highly sexualized or provocative imagery",
-                "Strong depictions of partying or substance use",
-                "Divisive or controversial commentary"
-            ];
-            recommendation = "HIGH RISK: Requires senior approval and careful brand alignment review. Not suitable for general audiences.";
-        } else if (
-            lowerDesc.includes("swimwear") ||
-            lowerDesc.includes("lingerie") ||
-            lowerDesc.includes("partying") ||
-            lowerDesc.includes("nightlife") ||
-            lowerDesc.includes("innuendo") ||
-            lowerDesc.includes("suggestive") ||
-            lowerDesc.includes("revealing") ||
-            lowerDesc.includes("drinking")
-        ) {
-            rating = "I-PG13";
-            riskLevel = "Medium";
-            summary = "Content includes moderately mature themes. Requires additional review for younger audiences.";
-            factors = [
-                "Suggestive poses or revealing fashion (swimwear/lingerie)",
-                "Mature humor with innuendo or flirtatious captions",
-                "Partying, nightlife, or social drinking imagery",
-                "Content may polarize some audience segments"
-            ];
-            recommendation = "MEDIUM RISK: Acceptable for adult-targeted campaigns. Review content sample before approval.";
-        } else if (
-            lowerDesc.includes("fashion") ||
-            lowerDesc.includes("lifestyle") ||
-            lowerDesc.includes("dating") ||
-            lowerDesc.includes("mild profanity") ||
-            lowerDesc.includes("casual") ||
-            lowerDesc.includes("relationships")
-        ) {
-            rating = "I-PG";
-            riskLevel = "Low";
-            summary = "Content is mostly safe with mild mature elements. Suitable for most audiences.";
-            factors = [
-                "Mild or infrequent light profanity",
-                "Casual fashion content without sexualization",
-                "Respectful discussion of dating or relationships",
-                "Minor thematic complexity appropriate for teens+"
-            ];
-            recommendation = "LOW RISK: Generally suitable for most brand partnerships. Minimal review required.";
-        } else {
-            rating = "I-G";
-            riskLevel = "Low";
-            summary = "Content is universally appropriate for all ages. No mature, controversial, or sensitive material detected.";
-            factors = [
-                "No profanity or offensive language",
-                "Family-friendly presentation across all posts",
-                "Educational, positive, or neutral tone",
-                "No controversial or divisive topics"
-            ];
-            recommendation = "APPROVED: Ideal for all brand partnerships including family and child-focused campaigns.";
+            const data = await response.json();
+
+            setResult({
+                rating: data.rating,
+                summary: data.summary,
+                factors: data.factors || [],
+                recommendation: data.recommendation,
+                riskLevel: data.riskLevel,
+            });
+        } catch (error) {
+            console.error("Classification error:", error);
+            setResult({
+                rating: "I-PG",
+                summary: "Unable to classify content. Please check your API configuration.",
+                factors: ["API error occurred", "Please verify OpenAI API key is set"],
+                recommendation: "Please configure OpenAI API key in .env.local file",
+                riskLevel: "Low",
+            });
         }
 
-        setResult({
-            rating,
-            summary,
-            factors,
-            recommendation,
-            riskLevel,
-        });
         setLoading(false);
     };
 
