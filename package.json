@@ -40,5 +40,9 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "form-data": "^4.0.4",
+    "node-fetch": "^2.7.0"
   }
 }
